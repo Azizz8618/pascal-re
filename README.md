@@ -69,7 +69,7 @@ monitor cards, the zone map of the volume and the tools:
 |---------|------|-----------|
 | simh/BESM6 | `~/Yandex.Disk/simh/BESM6/` | hardware emulator; its own `MD/2048` image |
 | dispak | `~/Yandex.Disk/dispak/` | batch emulator, `besmtool`, `pascal-monitor` test decks |
-| re-dispak | `~/Yandex.Disk/re-dispak/` | DISPAK sources; `rukava.be` keeps the 2048 zone map |
+| re-dispak | `~/Yandex.Disk/re_dispak/re-dispak/` | DISPAK sources; `rukava.be` keeps the 2048 zone map |
 | monitor80-re | `~/Yandex.Disk/monitor80-re/` | Monitor-80 internals: `LIBDRUM` (*PERSO), `%PASCAL`, `GIVTRAN` |
 | dtran | `~/Yandex.Disk/dtran/` | disassembly/verification, `pasdms.sh` PERSO extraction |
 | besm-operator | `~/besm-operator/` | Dubna operator sessions, `*LIBRARY`/`*PERSO` examples |
