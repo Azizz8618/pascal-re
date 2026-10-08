@@ -47,3 +47,31 @@ The resulting assembly file was accepted by the assembler `*MADLEN` but containe
 symbols. After all labels within the code section were thrown out and all references to them
 replaced with an equivalent of `START+offset`, the code compiled and the resulting object file
 was able to link and to compile a small Pascal program.
+
+## Building the compiler and recording it into PERSO
+
+`pascompl.b6` is the compiler source in Pascal-Monitor itself. Under the
+Monitor-80 ("Dubna") batch in `dispak` it compiles with the system compiler
+and the resulting `PASCOMPL` module is written into a personal library
+(PERSO) on disk 2048; `*STAND` then makes `*CALL *PASCAL` use the recorded
+module instead of the pre-linked overlay. See `PERSO.md` for the exact
+monitor cards, the zone map of the volume and the tools:
+
+    tools/init-disk-2048.sh   # working copy of disk 2048 in ~/.besm6
+    tools/perso-build.sh      # compile the compiler, record into PERSO
+    tools/perso-check.sh      # verify the catalog entry, extract the object
+    tools/perso-run.sh x.pas  # compile and run a program with that compiler
+    tests/run-tests.sh        # functional suite (build + goldens + provenance)
+
+## Related BESM-6 projects
+
+| Project | Path | Role here |
+|---------|------|-----------|
+| simh/BESM6 | `~/Yandex.Disk/simh/BESM6/` | hardware emulator; its own `MD/2048` image |
+| dispak | `~/Yandex.Disk/dispak/` | batch emulator, `besmtool`, `pascal-monitor` test decks |
+| re-dispak | `~/Yandex.Disk/re-dispak/` | DISPAK sources; `rukava.be` keeps the 2048 zone map |
+| monitor80-re | `~/Yandex.Disk/monitor80-re/` | Monitor-80 internals: `LIBDRUM` (*PERSO), `%PASCAL`, `GIVTRAN` |
+| dtran | `~/Yandex.Disk/dtran/` | disassembly/verification, `pasdms.sh` PERSO extraction |
+| besm-operator | `~/besm-operator/` | Dubna operator sessions, `*LIBRARY`/`*PERSO` examples |
+
+See `~/Yandex.Disk/BESM6_PROJECTS.md` for the ecosystem overview.
