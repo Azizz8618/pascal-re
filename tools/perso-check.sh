@@ -9,7 +9,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VOL=2048
+# Resolve images from the working copy first, then the system directories.
+SIMHMD=${SIMHMD:-$HOME/Yandex.Disk/simh/BESM6/MD/EC5061}
+export BESM6_PATH=${BESM6_PATH:-$HOME/.besm6:/usr/local/share/besm6:$SIMHMD}
+
+VOL=2348
 ZONE=2000
 ZONES=
 DUMP=

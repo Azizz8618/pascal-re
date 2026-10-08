@@ -4,12 +4,17 @@
 # then checks that the recorded compiler - and not the shipped overlay -
 # compiles and runs sample programs.
 #
-# Zones used on the target volume:
-#   2000 (octal) - merged self-contained library (system modular /*PASCAL
-#                  from volume 2148 zone 440 plus the new PASCOMPL)
-#   4000         - compact library: only the new PASCOMPL module
-#   5000         - merged variant with a replaced banner, used to prove
-#                  that *STAND + *PERSO really invoke the recorded compiler
+# Everything runs on the working copy of the Д-2048 volume (EC-5061 image
+# MD/EC5061/2348 copied to ~/.besm6/2348); the source image is checked to be
+# byte-identical after the suite. Two PERSO copies are recorded on it, each with its own
+# banner so that the monitor listing shows which compiler ran (the shipped
+# compiler prints "PASCAL COMPILER 15.0 (15.02.82)"; the banner text passes
+# through the Dubna TEXT encoding, so only digits and punctuation are safe
+# to grep):
+#   2000 (octal) - working library: system modular /*PASCAL from volume 2148
+#                  zone 440 plus the reconstructed PASCOMPL, banner "15.1"
+#   5000         - test library: same build with banner "99.9", proves that
+#                  *STAND + *PERSO really invoke the recorded compiler
 #
 # RECORD=1 regenerates the golden files instead of comparing.
 set -u
@@ -18,10 +23,10 @@ cd "$(dirname "$0")/.."
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-MERGED_ZONE=${MERGED_ZONE:-2000}
-COMPACT_ZONE=${COMPACT_ZONE:-4000}
-VARIANT_ZONE=${VARIANT_ZONE:-5000}
-VARIANT_BANNER='PERSO PROVENANCE OK'
+WORK_ZONE=${WORK_ZONE:-2000}
+WORK_BANNER=${WORK_BANNER:-'PASCAL COMPILER 15.1 (08.10.26)'}
+TEST_ZONE=${TEST_ZONE:-5000}
+TEST_BANNER=${TEST_BANNER:-'PASCAL COMPILER 99.9 (01.01.70)'}
 
 total=0
 fails=0
@@ -37,35 +42,31 @@ run_case() { # zone mode program target
     mask < "$4" > "$4.masked"
 }
 
-echo "== preparing the working copy of disk 2048"
-rm -f "$HOME/.besm6/2048"
-if ! tools/init-disk-2048.sh; then
+echo "== preparing the working copy of the Д-2048 volume"
+SIMHMD=${SIMHMD:-$HOME/Yandex.Disk/simh/BESM6/MD/EC5061}
+SRC_REF=${SRC_REF:-$SIMHMD/2348}
+ref_before=$(md5sum "$SRC_REF" | awk '{print $1}')
+if ! tools/init-disk-2048.sh -f; then
     echo "cannot initialize the working copy" >&2
     exit 1
 fi
 
 echo "== recording the compiler into PERSO"
-if ! tools/perso-build.sh --mode=merged --zone="$MERGED_ZONE"; then
-    echo "merged build failed" >&2
+if ! tools/perso-build.sh --mode=merged --zone="$WORK_ZONE" --banner="$WORK_BANNER"; then
+    echo "working build failed" >&2
     exit 1
 fi
-pass "merged library recorded at zone $MERGED_ZONE"
+pass "working library recorded at zone $WORK_ZONE"
 
-if ! tools/perso-build.sh --mode=compact --zone="$COMPACT_ZONE"; then
-    echo "compact build failed" >&2
+if ! tools/perso-build.sh --mode=merged --zone="$TEST_ZONE" --banner="$TEST_BANNER"; then
+    echo "test build failed" >&2
     exit 1
 fi
-pass "compact library recorded at zone $COMPACT_ZONE"
+pass "test library recorded at zone $TEST_ZONE"
 
-if ! tools/perso-build.sh --mode=merged --zone="$VARIANT_ZONE" --banner="$VARIANT_BANNER"; then
-    echo "variant build failed" >&2
-    exit 1
-fi
-pass "banner variant recorded at zone $VARIANT_ZONE"
-
-echo "== functional tests through the merged PERSO library"
+echo "== functional tests through the working PERSO library"
 for prog in writeln77 sieve forloop; do
-    run_case "$MERGED_ZONE" merged "tests/cases/$prog.pas" "$TMP/$prog.out"
+    run_case "$WORK_ZONE" merged "tests/cases/$prog.pas" "$TMP/$prog.out"
     if [ "${RECORD:-0}" = 1 ]; then
         cp "$TMP/$prog.out.masked" "tests/golden/$prog.txt"
         echo "recorded tests/golden/$prog.txt"
@@ -81,31 +82,40 @@ for prog in writeln77 sieve forloop; do
     fi
 done
 
-echo "== functional test through the compact PERSO library"
-run_case "$COMPACT_ZONE" compact tests/cases/writeln77.pas "$TMP/compact.out"
-if grep -qE '^[[:space:]]+77[[:space:]]*$' "$TMP/compact.out" \
-        && ! grep -q 'ОТСУТСТВУЕТ' "$TMP/compact.out"; then
-    pass "compact (two libraries): writeln77 runs"
+echo "== banners: each recorded compiler must announce itself"
+if grep -q '15\.1 (08\.10\.26)' "$TMP/writeln77.out" \
+        && ! grep -q '15\.0 (15\.02\.82)' "$TMP/writeln77.out"; then
+    pass "working banner 15.1 (08.10.26) from zone $WORK_ZONE"
 else
-    tail -30 "$TMP/compact.out"
-    fail "compact (two libraries): writeln77 runs"
+    tail -30 "$TMP/writeln77.out"
+    fail "working banner 15.1 (08.10.26) from zone $WORK_ZONE"
 fi
 
-echo "== provenance: the recorded compiler must replace the overlay"
-run_case "$VARIANT_ZONE" merged tests/cases/writeln77.pas "$TMP/variant.out"
-if grep -q '15\.0 (15\.02\.82)' "$TMP/variant.out"; then
-    fail "provenance: system overlay banner still printed from zone $VARIANT_ZONE"
-elif ! grep -qE '^[[:space:]]+77[[:space:]]*$' "$TMP/variant.out"; then
-    tail -30 "$TMP/variant.out"
-    fail "provenance: program did not run through the variant compiler"
+run_case "$TEST_ZONE" merged tests/cases/writeln77.pas "$TMP/provenance.out"
+if grep -q '99\.9 (01\.01\.70)' "$TMP/provenance.out" \
+        && ! grep -q '15\.0 (15\.02\.82)' "$TMP/provenance.out" \
+        && grep -qE '^[[:space:]]+77[[:space:]]*$' "$TMP/provenance.out"; then
+    pass "test banner 99.9 (01.01.70) from zone $TEST_ZONE"
 else
-    pass "provenance: variant compiler banner replaces the system one"
+    tail -30 "$TMP/provenance.out"
+    fail "test banner 99.9 (01.01.70) from zone $TEST_ZONE"
 fi
 
 echo "== catalog check"
-tools/perso-check.sh --zone="$MERGED_ZONE" > /dev/null \
+tools/perso-check.sh --zone="$WORK_ZONE" > /dev/null \
     && pass "check: catalog readable" \
     || fail "check: catalog readable"
+tools/perso-check.sh --zone="$TEST_ZONE" > /dev/null \
+    && pass "check: test catalog readable" \
+    || fail "check: test catalog readable"
+
+echo "== reference image protection"
+ref_after=$(md5sum "$SRC_REF" | awk '{print $1}')
+if [ "$ref_before" = "$ref_after" ]; then
+    pass "source image $SRC_REF unchanged"
+else
+    fail "source image $SRC_REF was modified"
+fi
 
 echo
 echo "tests: $total, failures: $fails"

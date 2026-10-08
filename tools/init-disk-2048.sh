@@ -1,12 +1,13 @@
 #!/bin/bash
-# Prepare the writable working copy of BESM-6 disk 2048 in ~/.besm6.
-# dispak and besmtool look up volume images in $HOME/.besm6 first and only
-# then in /usr/local/share/besm6, so all PERSO recording lands on this copy
-# and the reference images are never modified.
+# Prepare the writable working copy of the Д-2048 volume (package "2048").
+# The EC-5061 image MD/EC5061/2348 is a full copy of the Д-2048 package on a
+# 29 Mb volume, so PERSO recording happens on the copy 2348 and the system
+# images stay untouched.
 set -euo pipefail
 
-VOL=${VOL:-2048}
-REF=${REF:-/usr/local/share/besm6/$VOL}
+VOL=${VOL:-2348}
+SIMHMD=${SIMHMD:-$HOME/Yandex.Disk/simh/BESM6/MD/EC5061}
+REF=${REF:-$SIMHMD/$VOL}
 HOMEVOL=${HOMEVOL:-$HOME/.besm6/$VOL}
 
 case "${1:-}" in
@@ -16,6 +17,7 @@ esac
 
 if [ ! -f "$REF" ]; then
     echo "reference image not found: $REF" >&2
+    echo "set REF= or SIMHMD= to the EC5061 copy of the Д-2048 package" >&2
     exit 1
 fi
 

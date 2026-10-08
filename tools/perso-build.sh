@@ -17,7 +17,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VOL=2048
+# Resolve images from the working copy first, then the system directories.
+SIMHMD=${SIMHMD:-$HOME/Yandex.Disk/simh/BESM6/MD/EC5061}
+export BESM6_PATH=${BESM6_PATH:-$HOME/.besm6:/usr/local/share/besm6:$SIMHMD}
+
+VOL=2348
 LU=40
 ZONE=2000
 MODE=merged
@@ -30,7 +34,7 @@ SYS_ZONE=440
 usage() {
     echo "usage: $0 [--vol=N] [--lu=NN] [--zone=ZZZZ] [--mode=merged|compact]"
     echo "          [--src=file.b6] [--banner=text] [--sys-vol=N] [--sys-lu=NN] [--sys-zone=ZZZ]"
-    echo "defaults: vol=2048 lu=40 zone=2000 mode=merged src=pascompl.b6 sys=2148/41/440"
+    echo "defaults: vol=2348 lu=40 zone=2000 mode=merged src=pascompl.b6 sys=2148/41/440"
     exit "${1:-0}"
 }
 

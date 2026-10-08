@@ -53,11 +53,15 @@ was able to link and to compile a small Pascal program.
 `pascompl.b6` is the compiler source in Pascal-Monitor itself. Under the
 Monitor-80 ("Dubna") batch in `dispak` it compiles with the system compiler
 and the resulting `PASCOMPL` module is written into a personal library
-(PERSO) on disk 2048; `*STAND` then makes `*CALL *PASCAL` use the recorded
-module instead of the pre-linked overlay. See `PERSO.md` for the exact
-monitor cards, the zone map of the volume and the tools:
+(PERSO) on the Д-2048 package volume; recording happens on a working copy
+(`~/.besm6/2348`, taken from `simh/BESM6/MD/EC5061/2348`) so the system
+images are never modified. `*STAND` then makes `*CALL *PASCAL` use the
+recorded module instead of the pre-linked overlay, and each recorded copy
+carries its own banner so the listing shows which compiler ran. See
+`PERSO.md` for the exact monitor cards, the zone map of the volume and the
+tools:
 
-    tools/init-disk-2048.sh   # working copy of disk 2048 in ~/.besm6
+    tools/init-disk-2048.sh   # working copy of the Д-2048 volume in ~/.besm6
     tools/perso-build.sh      # compile the compiler, record into PERSO
     tools/perso-check.sh      # verify the catalog entry, extract the object
     tools/perso-run.sh x.pas  # compile and run a program with that compiler
